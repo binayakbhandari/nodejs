@@ -8,25 +8,43 @@ const fs = require('fs')
 const app = express()
 app.use(express.json())
 
-
 connectToDatabase()
 
- // API to create blog
-app.post("/blog", upload.single('image'), async (req, res)=>{
-    const {title, subtitle, description} = req.body
-    const {filename} =  req.file
-    const blog = await Blog.create({
-        title : title,
-        subtitle : subtitle,
-        description : description,
-        image : filename
+    // API to create blog
+    app.post("/blog",upload.single('image'), async (req, res)=>{
+        try {
+            const {title, subtitle, description} = req.body
+            const filename =  req.file?.filename
+
+            // validate input fields
+            if(!title || !subtitle || !description || !req.file){
+                try {
+                    if(req.file?.filename){
+                        await fs.promises.unlink('./storage/' + filename)
+                        console.log("File deleted successfully !")
+                    }
+                } catch (error) {
+                    console.log("Failed to delete the file !", error.message)
+                }
+
+                return res.status(400).json({
+                    message : "Please enter all the fields !"
+                })
+            }
+
+            const blog = await Blog.create({title, subtitle, description, image : filename})
+            res.status(200).json({
+                message : "Blog Created Successfully !",
+                data : blog
+            })
+        } catch (error) {
+            res.status(500).json({
+                message : "Something went wrong !",
+                error : error.message
+            })
+        }
+        
     })
-    res.status(200).json({
-        message : "Blog Created Successfully !",
-        data : blog
-    })
-    
-})
 
 // API to fetch blogs
 app.get("/blog", async (req, res)=>{
