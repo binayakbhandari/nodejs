@@ -48,92 +48,129 @@ connectToDatabase()
 
 // API to fetch blogs
 app.get("/blog", async (req, res)=>{
-    const blogs = await Blog.find()
-    if(blogs.length === 0){
-        return res.status(404).json({
-            message: "No data found"
+    try {
+        const blogs = await Blog.find()
+        if(blogs.length === 0){
+            return res.status(404).json({
+                message: "No data found"
+            })
+        }
+        res.status(200).json({
+            message : "Blogs fetched sucessfully !",
+            data : blogs
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Something went wrong while fetching blogs !",
+            error :  error.message
         })
     }
-    res.status(200).json({
-        message : "Blogs fetched sucessfully !",
-        data : blogs
-    })
 })
 
 // API to fetch single blog
 app.get("/blog/:id", async (req, res)=>{
+try {
     const {id} = req.params
     const blog = await Blog.findById(id)
+
     if(!blog){
         return res.status(404).json({
-            message: "No data found"
+            message: "Blog not found"
         })
     }
     res.status(200).json({
         message : "Blog fetched successfully !",
         data : blog
     })
+} catch (error) {
+    res.status(500).json({
+        message : "Something went wrong while fetching blog !",
+        error : error.message
+    })
+}
 })
 
 // API to update blog
 app.put("/blog/:id", upload.single('image'), async (req, res)=>{
-    const {id} = req.params
-    const blog = await Blog.findById(id)
-    if(!blog){
-        return res.status(404).json({
-            message: "No data found"
-        })
-    }
-
-    let filename = blog.image
-    if(req.file){
-        fs.unlink('./storage/' + filename, (err)=>{
-            if(err) {
-                console.log(err)
-            } else {
+    try {
+        const {id} = req.params
+        const blog = await Blog.findById(id)
+        if(!blog){
+            return res.status(404).json({
+                message: "No data found"
+            })
+        }
+    
+        let filename = blog.image
+        if(req.file){
+            try {
+                await fs.promises.unlink('./storage/' + filename)
                 console.log("Old file deleted successfully !")
+            } catch (error) {
+                res.status(500).json({
+                    message : "Something went wrong while deleting old file !",
+                    error : error.message
+                })
             }
+            filename = req.file.filename
+        }
+    
+        const {title, subtitle, description} = req.body
+        await Blog.findByIdAndUpdate(id, {
+            title, 
+            subtitle, 
+            description, 
+            image : filename
         })
-        filename = req.file.filename
+        res.status(200).json({
+            message : "Blog updated successfully !"
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Something went wrong while updating blog !",
+            error : error.message
+        })
     }
-
-    const {title, subtitle, description} = req.body
-    await Blog.findByIdAndUpdate(id, {
-        title : title,
-        subtitle : subtitle,
-        description : description,
-        image : filename
-    })
-    res.status(200).json({
-        message : "Blog updated successfully !"
-    })
 })
+
+// API to delete blog
+app.delete("/blog/:id", async (req, res)=>{
+    try {
+        const {id} = req.params
+        const blog = await Blog.findById(id)
+        if(!blog){
+            return res.status(404).json({
+                message: "Blog not found !"
+            })
+        }
+        const filename = blog.image
+        if(filename){
+            try {
+                await fs.promises.unlink('./storage/' + filename)
+                console.log("File deleted successfully !") 
+            } catch (error) {
+                return res.status(500).json({
+                    message : "Something went wrong while deleting file !",
+                    error : error.message
+                })
+            }
+
+        }
+
+        await Blog.findByIdAndDelete(id)
+        res.status(200).json({
+            message : "Blog deleted successfully !"
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Something went wrong while deleting blog !",
+            error : error.message
+        })
+    }
+})
+
 
 
 app.listen(process.env.PORT, ()=>{
     console.log("NodeJS Project Started")
-})
-
-
-// API to delete blog
-app.delete("/blog/:id", async (req, res)=>{
-    const {id} = req.params
-    const blog = await Blog.findById(id)
-    if(!blog){
-        return res.status(404).json({
-            message: "No data found"
-        })
-    }
-    const filename = blog.image
-    fs.unlink('./storage/' + filename, (err)=>{
-        if(err) {
-            console.log("Failed to delete the file !")
-        } else{
-            console.log("File deleted successfully !")
-        }
-    })
-    await Blog.findByIdAndDelete(id)
-    res.status(200).json({
-        message : "Blog deleted successfully !"
-    })
 })
