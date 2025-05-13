@@ -179,6 +179,6 @@ app.delete("/blog/:id", async (req, res)=>{
 app.use(express.static('./storage'))
 
 
-app.listen(process.env.PORT, ()=>{
+app.listen(process.env.PORT || 4000, ()=>{
     console.log("NodeJS Project Started")
 })
