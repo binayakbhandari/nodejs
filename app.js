@@ -11,7 +11,7 @@ const cors = require('cors')
 
 
 app.use(cors({
-    origin: "http://localhost:5173"
+    origin: "https://mern-3-p404.vercel.app"
 }))
 
 
