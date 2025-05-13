@@ -11,7 +11,7 @@ const cors = require('cors')
 
 
 app.use(cors({
-    origin: "https://mern-3-p404.vercel.app"
+    origin: ["https://mern-3-p404.vercel.app", "http://localhost:5173"]
 }))
 
 
@@ -176,7 +176,15 @@ app.delete("/blog/:id", async (req, res)=>{
     }
 })
 
-app.use(express.static('./storage'))
+// app.use(express.static('./storage'))
+app.use('/uploads', express.static('storage', {
+  setHeaders: function (res, path, stat) {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
+}));
+
+
 
 
 app.listen(process.env.PORT || 4000, ()=>{
