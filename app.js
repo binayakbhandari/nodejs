@@ -7,6 +7,13 @@ const upload = multer({storage: storage})
 const fs = require('fs')
 const app = express()
 app.use(express.json())
+const cors = require('cors')
+
+
+app.use(cors({
+    origin: "http://localhost:5173"
+}))
+
 
 connectToDatabase()
 
@@ -169,6 +176,7 @@ app.delete("/blog/:id", async (req, res)=>{
     }
 })
 
+app.use(express.static('./storage'))
 
 
 app.listen(process.env.PORT, ()=>{
