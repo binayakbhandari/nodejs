@@ -176,7 +176,13 @@ app.delete("/blog/:id", async (req, res)=>{
     }
 })
 
-app.use('/uploads', express.static('storage'));
+app.use('/uploads', express.static('storage', {
+  setHeaders: function (res, path, stat) {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
+}));
+
 
 
 
