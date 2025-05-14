@@ -8,6 +8,7 @@ const fs = require('fs')
 const app = express()
 app.use(express.json())
 const cors = require('cors')
+const path = require('path');
 
 
 app.use(cors({
@@ -18,15 +19,51 @@ app.use(cors({
 connectToDatabase()
 
     // API to create blog
-    app.post("/blog",upload.single('image'), async (req, res)=>{
-        try {
-            const {title, subtitle, description} = req.body
-            const filename =  req.file?.filename
+    // app.post("/blog",upload.single('image'), async (req, res)=>{
+    //     try {
+    //         const {title, subtitle, description} = req.body
+    //         const filename =  "https://nodejs-ds6o.onrender.com/"+req.file?.filename
 
-            // validate input fields
-            if(!title || !subtitle || !description || !req.file){
+    //         // validate input fields
+    //         if(!title || !subtitle || !description || !req.file){
+    //             try {
+    //                 if(req.file?.filename){
+    //                     await fs.promises.unlink('./storage/' + filename)
+    //                     console.log("File deleted successfully !")
+    //                 }
+    //             } catch (error) {
+    //                 console.log("Failed to delete the file !", error.message)
+    //             }
+
+    //             return res.status(400).json({
+    //                 message : "Please enter all the fields !"
+    //             })
+    //         }
+
+    //         const blog = await Blog.create({title, subtitle, description, image : filename})
+    //         res.status(200).json({
+    //             message : "Blog Created Successfully !",
+    //             data : blog
+    //         })
+    //     } catch (error) {
+    //         res.status(500).json({
+    //             message : "Something went wrong !",
+    //             error : error.message
+    //         })
+    //     }
+        
+    // })
+
+    // API to create blog
+app.post("/blog", upload.single('image'), async (req, res) => {
+    try {
+        const { title, subtitle, description } = req.body
+        let filename;
+        if (req.file) {
+            filename = "http://localhost:3000/" + req.file.filename
+            if (!title || !subtitle || !description) {
                 try {
-                    if(req.file?.filename){
+                    if (req.file?.filename) {
                         await fs.promises.unlink('./storage/' + filename)
                         console.log("File deleted successfully !")
                     }
@@ -35,23 +72,37 @@ connectToDatabase()
                 }
 
                 return res.status(400).json({
-                    message : "Please enter all the fields !"
+                    message: "Please enter all the fields !"
                 })
             }
 
-            const blog = await Blog.create({title, subtitle, description, image : filename})
-            res.status(200).json({
-                message : "Blog Created Successfully !",
-                data : blog
-            })
-        } catch (error) {
-            res.status(500).json({
-                message : "Something went wrong !",
-                error : error.message
-            })
         }
-        
-    })
+        else {
+            filename = "https://w0.peakpx.com/wallpaper/551/966/HD-wallpaper-cute-cats-cat-cute-kawaii-pink-thumbnail.jpg"
+        }
+
+        await Blog.create({
+            title: title,
+            subtitle: subtitle,
+            description: description,
+            image: filename
+        })
+        res.status(200).json({
+            message: "Blog Created Successfully !"
+        })
+
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong !",
+            error: error.message
+        })
+    }
+
+
+})
+
+
 
 // API to fetch blogs
 app.get("/blog", async (req, res)=>{
@@ -109,17 +160,22 @@ app.put("/blog/:id", upload.single('image'), async (req, res)=>{
         }
     
         let filename = blog.image
-        if(req.file){
-            try {
-                await fs.promises.unlink('./storage/' + filename)
-                console.log("Old file deleted successfully !")
-            } catch (error) {
-                res.status(500).json({
-                    message : "Something went wrong while deleting old file !",
-                    error : error.message
-                })
+        //  If new image is uploaded
+        if (req.file) {
+            //  Only delete old file if it was local
+            if (filename.startsWith("http://localhost:3000/")) {
+                const oldFilename = filename.replace("http://localhost:3000/", "");
+                const filePath = path.join(__dirname, 'storage', oldFilename);
+                try {
+                    await fs.promises.unlink(filePath);
+                    console.log("Old file deleted successfully!");
+                } catch (error) {
+                    console.error("Error deleting old image:", error.message);
+                }
             }
-            filename = req.file.filename
+
+            //  Save full URL of new image
+            filename = "http://localhost:3000/" + req.file.filename;
         }
     
         const {title, subtitle, description} = req.body
@@ -150,18 +206,20 @@ app.delete("/blog/:id", async (req, res)=>{
                 message: "Blog not found !"
             })
         }
-        const filename = blog.image
-        if(filename){
-            try {
-                await fs.promises.unlink('./storage/' + filename)
-                console.log("File deleted successfully !") 
-            } catch (error) {
-                return res.status(500).json({
-                    message : "Something went wrong while deleting file !",
-                    error : error.message
-                })
-            }
+        const imageUrl = blog.image;
 
+        // Only try to delete the image if it's a local file
+        if (imageUrl && imageUrl.startsWith("http://localhost:3000/")) {
+            const filename = imageUrl.replace("http://localhost:3000/", "");
+            const filePath = path.join(__dirname, 'storage', filename);
+
+            try {
+                await fs.promises.unlink(filePath);
+                console.log("File deleted successfully!");
+            } catch (error) {
+                console.error("Failed to delete the file!", error.message);
+                // Optional: Don't return here, just log it and continue to delete blog
+            }
         }
 
         await Blog.findByIdAndDelete(id)
@@ -176,16 +234,8 @@ app.delete("/blog/:id", async (req, res)=>{
     }
 })
 
-app.use('/uploads', express.static('storage', {
-  setHeaders: function (res, path, stat) {
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
-  }
-}));
 
-
-
-
+app.use(express.static('./storage'))
 
 
 app.listen(process.env.PORT || 4000, ()=>{
