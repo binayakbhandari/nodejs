@@ -60,7 +60,7 @@ app.post("/blog", upload.single('image'), async (req, res) => {
         const { title, subtitle, description } = req.body
         let filename;
         if (req.file) {
-            filename = "http://localhost:3000/" + req.file.filename
+            filename = "https://nodejs-ds6o.onrender.com/" + req.file.filename
             if (!title || !subtitle || !description) {
                 try {
                     if (req.file?.filename) {
@@ -163,8 +163,8 @@ app.put("/blog/:id", upload.single('image'), async (req, res)=>{
         //  If new image is uploaded
         if (req.file) {
             //  Only delete old file if it was local
-            if (filename.startsWith("http://localhost:3000/")) {
-                const oldFilename = filename.replace("http://localhost:3000/", "");
+            if (filename.startsWith("https://nodejs-ds6o.onrender.com/")) {
+                const oldFilename = filename.replace("https://nodejs-ds6o.onrender.com/", "");
                 const filePath = path.join(__dirname, 'storage', oldFilename);
                 try {
                     await fs.promises.unlink(filePath);
@@ -175,7 +175,7 @@ app.put("/blog/:id", upload.single('image'), async (req, res)=>{
             }
 
             //  Save full URL of new image
-            filename = "http://localhost:3000/" + req.file.filename;
+            filename = "https://nodejs-ds6o.onrender.com/" + req.file.filename;
         }
     
         const {title, subtitle, description} = req.body
@@ -209,8 +209,8 @@ app.delete("/blog/:id", async (req, res)=>{
         const imageUrl = blog.image;
 
         // Only try to delete the image if it's a local file
-        if (imageUrl && imageUrl.startsWith("http://localhost:3000/")) {
-            const filename = imageUrl.replace("http://localhost:3000/", "");
+        if (imageUrl && imageUrl.startsWith("https://nodejs-ds6o.onrender.com/")) {
+            const filename = imageUrl.replace("https://nodejs-ds6o.onrender.com/", "");
             const filePath = path.join(__dirname, 'storage', filename);
 
             try {
